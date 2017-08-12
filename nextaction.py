@@ -28,6 +28,8 @@ def get_subitems(items, parent_item=None):
     else:
         required_indent = 1
     for item in items:
+        if not is_item_visible(item):
+            continue
         if parent_item:
             if not found and item['id'] != parent_item['id']:
                 continue
