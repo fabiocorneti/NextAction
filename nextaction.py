@@ -143,6 +143,7 @@ def main():
 
                     # Tracks whether the first visible item at the root of the project has been found.
                     root_first_found = False
+                    project_has_next_action = False
 
                     for item in items:
 
@@ -164,12 +165,19 @@ def main():
                             logging.debug('Identified %s as %s type', item['content'], item_type)
 
                         if item_type or len(child_items) > 0:
+
+                            # If the project is serial and there is a next action,
+                            # remove the next_action from all children.
+                            if project_type == 'serial' and project_has_next_action:
+                                for child_item in child_items:
+                                    remove_label(child_item, label_id)
                             # Process serial tagged items
-                            if item_type == 'serial':
+                            elif item_type == 'serial':
                                 first_found = False
                                 for child_item in child_items:
                                     if is_item_visible(child_item) and not first_found:
                                         add_label(child_item, label_id)
+                                        project_has_next_action = True
                                         first_found = True
                                     else:
                                         remove_label(child_item, label_id)
@@ -189,6 +197,7 @@ def main():
                                     if is_item_visible(item) and not root_first_found:
                                         add_label(item, label_id)
                                         root_first_found = True
+                                        project_has_next_action = True
                                     else:
                                         remove_label(item, label_id)
                                 elif project_type == 'parallel':
