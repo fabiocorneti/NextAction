@@ -141,7 +141,13 @@ def main():
                     # Get all items for the project, sort by the item_order field.
                     items = sorted(api.items.all(lambda x: x['project_id'] == project['id']), key=lambda x: x['item_order'])
 
-                    for item_index, item in enumerate(items):
+                    # Tracks whether the first visible item at the root of the project has been found.
+                    root_first_found = False
+
+                    for item in items:
+
+                        if not is_item_visible(item):
+                            continue
 
                         # If its too far in the future, remove the next_action tag and skip
                         if args.hide_future > 0 and 'due_date_utc' in item.data and item['due_date_utc'] is not None:
@@ -149,6 +155,7 @@ def main():
                             future_diff = (due_date - datetime.utcnow()).total_seconds()
                             if future_diff >= (args.hide_future * 86400):
                                 remove_label(item, label_id)
+                                root_first_found = True
                                 continue
 
                         item_type = get_item_type(item)
@@ -159,9 +166,9 @@ def main():
                         if item_type or len(child_items) > 0:
                             # Process serial tagged items
                             if item_type == 'serial':
+                                first_found = False
                                 for child_item in child_items:
-                                    first_found = False
-                                    if child_item['checked'] == 0 and not first_found:
+                                    if is_item_visible(child_item) and not first_found:
                                         add_label(child_item, label_id)
                                         first_found = True
                                     else:
@@ -173,13 +180,15 @@ def main():
 
                             # Remove the label from the parent
                             remove_label(item, label_id)
+                            root_first_found = True
 
                         # Process items as per project type on indent 1 if untagged
                         else:
                             if item['indent'] == 1:
                                 if project_type == 'serial':
-                                    if item_index == 0:
+                                    if is_item_visible(item) and not root_first_found:
                                         add_label(item, label_id)
+                                        root_first_found = True
                                     else:
                                         remove_label(item, label_id)
                                 elif project_type == 'parallel':
