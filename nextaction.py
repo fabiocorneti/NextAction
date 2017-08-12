@@ -11,6 +11,14 @@ import sys
 from datetime import datetime
 
 
+def is_item_visible(item):
+    """Returns true if the item is visible."""
+    for attr in ['is_deleted', 'is_archived', 'in_history', 'checked']:
+        if item[attr] == 1:
+            return False
+    return True
+
+
 def get_subitems(items, parent_item=None):
     """Search a flat item list for child items."""
     result_items = []
@@ -131,7 +139,7 @@ def main():
                     # Get all items for the project, sort by the item_order field.
                     items = sorted(api.items.all(lambda x: x['project_id'] == project['id']), key=lambda x: x['item_order'])
 
-                    for item in items:
+                    for item_index, item in enumerate(items):
 
                         # If its too far in the future, remove the next_action tag and skip
                         if args.hide_future > 0 and 'due_date_utc' in item.data and item['due_date_utc'] is not None:
@@ -168,7 +176,7 @@ def main():
                         else:
                             if item['indent'] == 1:
                                 if project_type == 'serial':
-                                    if item['item_order'] == 1:
+                                    if item_index == 0:
                                         add_label(item, label_id)
                                     else:
                                         remove_label(item, label_id)
